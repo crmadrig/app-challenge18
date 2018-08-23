@@ -1,0 +1,534 @@
+{
+  "name": "TibcoNow2018-adv",
+  "type": "flogo:app",
+  "version": "0.0.1",
+  "appModel": "1.0.0",
+  "triggers": [
+    {
+      "id": "receive_mqtt_message_4",
+      "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/mqtt",
+      "name": "Receive MQTT Message (4)",
+      "description": "Simple MQTT Trigger",
+      "settings": {
+        "broker": "$env[MQTT_SERVER]",
+        "id": "MN_RECEIVE_1013",
+        "user": "$env[MQTT_USER]",
+        "password": "$env[MQTT_PWD]",
+        "cleansess": false
+      },
+      "handlers": [
+        {
+          "action": {
+            "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
+            "data": {
+              "flowURI": "res://flow:mobile_notification"
+            },
+            "mappings": {
+              "input": [
+                {
+                  "mapTo": "message",
+                  "type": "assign",
+                  "value": "$.message"
+                }
+              ]
+            }
+          },
+          "settings": {
+            "topic": "mum/attentionalert/1013"
+          }
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "id": "flow:mobile_notification",
+      "data": {
+        "name": "MobileNotification",
+        "metadata": {
+          "input": [
+            {
+              "name": "message",
+              "type": "string"
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "id": "log_2",
+            "name": "Log Message",
+            "description": "Simple Log Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+              "input": {
+                "message": "",
+                "flowInfo": "false",
+                "addToFlow": "false"
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "assign",
+                    "value": "$flow.message",
+                    "mapTo": "message"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "jsontodata_3",
+            "name": "JSON to Data",
+            "description": "Converts JSON string into a data object",
+            "activity": {
+              "ref": "github.com/jvanderl/flogo-components/activity/jsontodata",
+              "input": {
+                "input": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "assign",
+                    "value": "$flow.message",
+                    "mapTo": "input"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "log_4",
+            "name": "Log Message (2)",
+            "description": "Simple Log Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+              "input": {
+                "message": "TruckID: 78,655 - Infraction Logged",
+                "flowInfo": "false",
+                "addToFlow": "false"
+              }
+            }
+          },
+          {
+            "id": "counter_8",
+            "name": "Increment Counter",
+            "description": "Simple Global Counter Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/counter",
+              "input": {
+                "counterName": "truck78655",
+                "increment": "true",
+                "reset": false
+              }
+            }
+          },
+          {
+            "id": "awssns_12",
+            "name": "Amazon SNS - SMS",
+            "description": "Send SMS using Amazon Web Services Simple Notification Services",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/awssns",
+              "input": {
+                "accessKey": null,
+                "secretKey": null,
+                "region": "us-east-1",
+                "smsType": "Promotional",
+                "from": "58800",
+                "to": "+19991234567",
+                "message": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "expression",
+                    "value": "string.concat($activity[jsontodata_3].data.mumreport.truckId, \" - Please consider taking a break at: \", $activity[jsontodata_3].data.mumreport.restlocation.name)",
+                    "mapTo": "message"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "counter_16",
+            "name": "Increment Counter (5)",
+            "description": "Simple Global Counter Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/counter",
+              "input": {
+                "counterName": "truck78655",
+                "increment": false,
+                "reset": "true"
+              }
+            }
+          },
+          {
+            "id": "log_5",
+            "name": "Log Message (3)",
+            "description": "Simple Log Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+              "input": {
+                "message": "TruckID: 78,617 - Infraction Logged",
+                "flowInfo": "false",
+                "addToFlow": "false"
+              }
+            }
+          },
+          {
+            "id": "counter_9",
+            "name": "Increment Counter (2)",
+            "description": "Simple Global Counter Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/counter",
+              "input": {
+                "counterName": "truck78617",
+                "increment": "true",
+                "reset": false
+              }
+            }
+          },
+          {
+            "id": "awssns_13",
+            "name": "Amazon SNS - SMS (2)",
+            "description": "Send SMS using Amazon Web Services Simple Notification Services",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/awssns",
+              "input": {
+                "accessKey": null,
+                "secretKey": null,
+                "region": "us-east-1",
+                "smsType": "Promotional",
+                "from": "58800",
+                "to": "+19991234567",
+                "message": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "expression",
+                    "value": "string.concat($activity[jsontodata_3].data.mumreport.truckId, \" - Please consider taking a break at: \", $activity[jsontodata_3].data.mumreport.restlocation.name)",
+                    "mapTo": "message"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "counter_17",
+            "name": "Increment Counter (6)",
+            "description": "Simple Global Counter Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/counter",
+              "input": {
+                "counterName": "truck78617",
+                "increment": false,
+                "reset": "true"
+              }
+            }
+          },
+          {
+            "id": "log_6",
+            "name": "Log Message (4)",
+            "description": "Simple Log Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+              "input": {
+                "message": "TruckID: 78,604 - Infraction Logged",
+                "flowInfo": "false",
+                "addToFlow": "false"
+              }
+            }
+          },
+          {
+            "id": "counter_10",
+            "name": "Increment Counter (3)",
+            "description": "Simple Global Counter Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/counter",
+              "input": {
+                "counterName": "truck78604",
+                "increment": "true",
+                "reset": false
+              }
+            }
+          },
+          {
+            "id": "awssns_14",
+            "name": "Amazon SNS - SMS (3)",
+            "description": "Send SMS using Amazon Web Services Simple Notification Services",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/awssns",
+              "input": {
+                "accessKey": null,
+                "secretKey": null,
+                "region": "us-east-1",
+                "smsType": "Promotional",
+                "from": "58800",
+                "to": "+19991234567",
+                "message": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "expression",
+                    "value": "string.concat($activity[jsontodata_3].data.mumreport.truckId, \" - Please consider taking a break at: \", $activity[jsontodata_3].data.mumreport.restlocation.name)",
+                    "mapTo": "message"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "counter_18",
+            "name": "Increment Counter (7)",
+            "description": "Simple Global Counter Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/counter",
+              "input": {
+                "counterName": "truck78604",
+                "increment": false,
+                "reset": "true"
+              }
+            }
+          },
+          {
+            "id": "log_7",
+            "name": "Log Message (5)",
+            "description": "Simple Log Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+              "input": {
+                "message": "TruckID: 78,926 - Infraction Logged",
+                "flowInfo": "false",
+                "addToFlow": "false"
+              }
+            }
+          },
+          {
+            "id": "counter_11",
+            "name": "Increment Counter (4)",
+            "description": "Simple Global Counter Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/counter",
+              "input": {
+                "counterName": "truck78926",
+                "increment": "true",
+                "reset": false
+              }
+            }
+          },
+          {
+            "id": "awssns_15",
+            "name": "Amazon SNS - SMS (4)",
+            "description": "Send SMS using Amazon Web Services Simple Notification Services",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/awssns",
+              "input": {
+                "accessKey": null,
+                "secretKey": null,
+                "region": "us-east-1",
+                "smsType": "Promotional",
+                "from": "58800",
+                "to": "+19991234567",
+                "message": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "expression",
+                    "value": "string.concat($activity[jsontodata_3].data.mumreport.truckId, \" - Please consider taking a break at: \", $activity[jsontodata_3].data.mumreport.restlocation.name)",
+                    "mapTo": "message"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "counter_19",
+            "name": "Increment Counter (8)",
+            "description": "Simple Global Counter Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/counter",
+              "input": {
+                "counterName": "truck78926",
+                "increment": false,
+                "reset": "true"
+              }
+            }
+          },
+          {
+            "id": "log_20",
+            "name": "Log Message (6)",
+            "description": "Simple Log Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+              "input": {
+                "message": "TruckID: 78,615 - Infraction Logged",
+                "flowInfo": "false",
+                "addToFlow": "false"
+              }
+            }
+          },
+          {
+            "id": "counter_21",
+            "name": "Increment Counter (9)",
+            "description": "Simple Global Counter Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/counter",
+              "input": {
+                "counterName": "truck78615",
+                "increment": "true",
+                "reset": false
+              }
+            }
+          },
+          {
+            "id": "awssns_22",
+            "name": "Amazon SNS - SMS (5)",
+            "description": "Send SMS using Amazon Web Services Simple Notification Services",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/awssns",
+              "input": {
+                "accessKey": null,
+                "secretKey": null,
+                "region": "us-east-1",
+                "smsType": "Promotional",
+                "from": "58800",
+                "to": "+19991234567",
+                "message": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "expression",
+                    "value": "string.concat($activity[jsontodata_3].data.mumreport.truckId, \" - Please consider taking a break at: \", $activity[jsontodata_3].data.mumreport.restlocation.name)",
+                    "mapTo": "message"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "counter_23",
+            "name": "Increment Counter (10)",
+            "description": "Simple Global Counter Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/counter",
+              "input": {
+                "counterName": "truck78615",
+                "increment": false,
+                "reset": "true"
+              }
+            }
+          }
+        ],
+        "links": [
+          {
+            "from": "log_2",
+            "to": "jsontodata_3"
+          },
+          {
+            "from": "jsontodata_3",
+            "to": "log_4",
+            "type": "expression",
+            "value": "$activity[jsontodata_3].data.mumreport.truckId == 78655"
+          },
+          {
+            "from": "log_4",
+            "to": "counter_8"
+          },
+          {
+            "from": "counter_8",
+            "to": "awssns_12",
+            "type": "expression",
+            "value": "$activity[counter_8].value == 2"
+          },
+          {
+            "from": "awssns_12",
+            "to": "counter_16"
+          },
+          {
+            "from": "jsontodata_3",
+            "to": "log_5",
+            "type": "expression",
+            "value": "$activity[jsontodata_3].data.mumreport.truckId == 78617"
+          },
+          {
+            "from": "log_5",
+            "to": "counter_9"
+          },
+          {
+            "from": "counter_9",
+            "to": "awssns_13",
+            "type": "expression",
+            "value": "$activity[counter_9].value == 2"
+          },
+          {
+            "from": "awssns_13",
+            "to": "counter_17"
+          },
+          {
+            "from": "jsontodata_3",
+            "to": "log_6",
+            "type": "expression",
+            "value": "$activity[jsontodata_3].data.mumreport.truckId == 78604"
+          },
+          {
+            "from": "log_6",
+            "to": "counter_10"
+          },
+          {
+            "from": "counter_10",
+            "to": "awssns_14",
+            "type": "expression",
+            "value": "$activity[counter_10].value == 2"
+          },
+          {
+            "from": "awssns_14",
+            "to": "counter_18"
+          },
+          {
+            "from": "jsontodata_3",
+            "to": "log_7",
+            "type": "expression",
+            "value": "$activity[jsontodata_3].data.mumreport.truckId == 78926"
+          },
+          {
+            "from": "log_7",
+            "to": "counter_11"
+          },
+          {
+            "from": "counter_11",
+            "to": "awssns_15",
+            "type": "expression",
+            "value": "$activity[counter_11].value == 2"
+          },
+          {
+            "from": "awssns_15",
+            "to": "counter_19"
+          },
+          {
+            "from": "jsontodata_3",
+            "to": "log_20",
+            "type": "expression",
+            "value": "$activity[jsontodata_3].data.mumreport.truckId == 78615"
+          },
+          {
+            "from": "log_20",
+            "to": "counter_21"
+          },
+          {
+            "from": "counter_21",
+            "to": "awssns_22",
+            "type": "expression",
+            "value": "$activity[counter_21].value == 2"
+          },
+          {
+            "from": "awssns_22",
+            "to": "counter_23"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,807 @@
+{
+  "name": "TibcoNow2018-x",
+  "type": "flogo:app",
+  "version": "0.0.1",
+  "appModel": "1.0.0",
+  "triggers": [
+    {
+      "id": "receive_mqtt_message",
+      "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/mqtt",
+      "name": "Receive MQTT Message",
+      "description": "Simple MQTT Trigger",
+      "settings": {
+        "broker": "$env[MQTT_SERVER]",
+        "id": "AF_RECIEVE_999",
+        "user": "$env[MQTT_USER]",
+        "password": "$env[MQTT_PWD]",
+        "cleansess": false
+      },
+      "handlers": [
+        {
+          "action": {
+            "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
+            "data": {
+              "flowURI": "res://flow:aggregate_flow"
+            },
+            "mappings": {
+              "input": [
+                {
+                  "mapTo": "message",
+                  "type": "assign",
+                  "value": "$.message"
+                }
+              ]
+            }
+          },
+          "settings": {
+            "topic": "mum/data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "receive_mqtt_message_1",
+      "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/mqtt",
+      "name": "Receive MQTT Message (1)",
+      "description": "Simple MQTT Trigger",
+      "settings": {
+        "broker": "$env[MQTT_SERVER]",
+        "id": "FSW_RECIEVE_999",
+        "user": "$env[MQTT_USER]",
+        "password": "$env[MQTT_PWD]",
+        "cleansess": false
+      },
+      "handlers": [
+        {
+          "action": {
+            "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
+            "data": {
+              "flowURI": "res://flow:fuel_stop_warning"
+            },
+            "mappings": {
+              "input": [
+                {
+                  "mapTo": "message",
+                  "type": "assign",
+                  "value": "$.message"
+                }
+              ]
+            }
+          },
+          "settings": {
+            "topic": "mum/aggregated/999"
+          }
+        }
+      ]
+    },
+    {
+      "id": "receive_mqtt_message_2",
+      "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/mqtt",
+      "name": "Receive MQTT Message (2)",
+      "description": "Simple MQTT Trigger",
+      "settings": {
+        "broker": "$env[MQTT_SERVER]",
+        "id": "RS_RECIEVE_999",
+        "user": "$env[MQTT_USER]",
+        "password": "$env[MQTT_PWD]",
+        "cleansess": false
+      },
+      "handlers": [
+        {
+          "action": {
+            "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
+            "data": {
+              "flowURI": "res://flow:rest_stop"
+            },
+            "mappings": {
+              "input": [
+                {
+                  "mapTo": "message",
+                  "type": "assign",
+                  "value": "$.message"
+                }
+              ]
+            }
+          },
+          "settings": {
+            "topic": "mum/attention"
+          }
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "id": "flow:aggregate_flow",
+      "data": {
+        "name": "AggregateFlow",
+        "metadata": {
+          "input": [
+            {
+              "name": "message",
+              "type": "string"
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "id": "log_2",
+            "name": "Log Message",
+            "description": "Simple Log Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+              "input": {
+                "message": "",
+                "flowInfo": "false",
+                "addToFlow": "false"
+              }
+            }
+          },
+          {
+            "id": "jsontodata_3",
+            "name": "JSON to Data",
+            "description": "Converts JSON string into a data object",
+            "activity": {
+              "ref": "github.com/jvanderl/flogo-components/activity/jsontodata",
+              "input": {
+                "input": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "assign",
+                    "value": "$flow.message",
+                    "mapTo": "input"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "aggregate_4",
+            "name": "Aggregate with key",
+            "description": "Key based Aggregator Activity",
+            "activity": {
+              "ref": "github.com/ayh20/flogo-components/activity/aggregate",
+              "input": {
+                "function": "",
+                "windowSize": 0,
+                "value": 0,
+                "key": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "literal",
+                    "value": "block_avg",
+                    "mapTo": "function"
+                  },
+                  {
+                    "type": "assign",
+                    "value": "$activity[jsontodata_3].data.mumreport.truckId",
+                    "mapTo": "key"
+                  },
+                  {
+                    "type": "assign",
+                    "value": "$activity[jsontodata_3].data.mumreport.position.speed",
+                    "mapTo": "value"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "3",
+                    "mapTo": "windowSize"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "log_5",
+            "name": "Log Message (2)",
+            "description": "Simple Log Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+              "input": {
+                "message": "",
+                "flowInfo": "false",
+                "addToFlow": "false"
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "assign",
+                    "value": "$activity[aggregate_4].result",
+                    "mapTo": "message"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "mqtt_6",
+            "name": "Send MQTT Message",
+            "description": "Pubishes message on MQTT topic",
+            "activity": {
+              "ref": "github.com/jvanderl/flogo-components/incubator/activity/mqtt",
+              "input": {
+                "broker": "",
+                "id": "",
+                "user": "",
+                "password": "",
+                "topic": "",
+                "qos": 0,
+                "message": null
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "assign",
+                    "value": "$env[MQTT_SERVER]",
+                    "mapTo": "broker"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "AF_SEND_999",
+                    "mapTo": "id"
+                  },
+                  {
+                    "type": "assign",
+                    "value": "$env[MQTT_PWD]",
+                    "mapTo": "password"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "mum/aggregated/999",
+                    "mapTo": "topic"
+                  },
+                  {
+                    "type": "assign",
+                    "value": "$env[MQTT_USER]",
+                    "mapTo": "user"
+                  },
+                  {
+                    "type": "object",
+                    "value": {
+                      "mumreport": {
+                        "participantId": "999",
+                        "truckId": "{{$activity[jsontodata_3].data.mumreport.truckId}}",
+                        "dateTime": "{{$activity[jsontodata_3].data.mumreport.dateTime}}",
+                        "fuelLevel": "{{$activity[jsontodata_3].data.mumreport.fuelLevel}}",
+                        "position": {
+                          "lat": "{{$activity[jsontodata_3].data.mumreport.position.lat}}",
+                          "long": "{{$activity[jsontodata_3].data.mumreport.position.long}}",
+                          "speed": "{{$activity[aggregate_4].result}}"
+                        }
+                      }
+                    },
+                    "mapTo": "message"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "links": [
+          {
+            "from": "log_2",
+            "to": "jsontodata_3"
+          },
+          {
+            "from": "jsontodata_3",
+            "to": "aggregate_4"
+          },
+          {
+            "from": "aggregate_4",
+            "to": "log_5",
+            "type": "expression",
+            "value": "$activity[aggregate_4].report == true"
+          },
+          {
+            "from": "log_5",
+            "to": "mqtt_6"
+          }
+        ]
+      }
+    },
+    {
+      "id": "flow:fuel_stop_warning",
+      "data": {
+        "name": "FuelStopWarning",
+        "metadata": {
+          "input": [
+            {
+              "name": "message",
+              "type": "string"
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "id": "jsontodata_2",
+            "name": "JSON to Data",
+            "description": "Converts JSON string into a data object",
+            "activity": {
+              "ref": "github.com/jvanderl/flogo-components/activity/jsontodata",
+              "input": {
+                "input": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "assign",
+                    "value": "$flow.message",
+                    "mapTo": "input"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "rest_3",
+            "name": "Invoke REST Service",
+            "description": "Simple REST Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/rest",
+              "input": {
+                "method": "",
+                "uri": "",
+                "proxy": "",
+                "pathParams": null,
+                "queryParams": null,
+                "header": null,
+                "skipSsl": "false",
+                "content": null
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "literal",
+                    "value": "GET",
+                    "mapTo": "method"
+                  },
+                  {
+                    "type": "object",
+                    "value": {
+                      "lat": "{{$activity[jsontodata_2].data.mumreport.position.lat}}",
+                      "long": "{{$activity[jsontodata_2].data.mumreport.position.long}}",
+                      "api_key": "2q2src2scxwh7q5hduskufdv"
+                    },
+                    "mapTo": "queryParams"
+                  },
+                  {
+                    "type": "expression",
+                    "value": "true()",
+                    "mapTo": "skipSsl"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "http://ahampshi.api.mashery.com/tn18/locatefuel",
+                    "mapTo": "uri"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "log_4",
+            "name": "Log Message",
+            "description": "Simple Log Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+              "input": {
+                "message": "",
+                "flowInfo": "false",
+                "addToFlow": "false"
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "expression",
+                    "value": "string.concat(\"Error calling API \", $activity[rest_3].result)",
+                    "mapTo": "addToFlow"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "jsontodata_5",
+            "name": "JSON to Data (2)",
+            "description": "Converts JSON string into a data object",
+            "activity": {
+              "ref": "github.com/jvanderl/flogo-components/activity/jsontodata",
+              "input": {
+                "input": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "assign",
+                    "value": "$activity[rest_3].result",
+                    "mapTo": "input"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "mqtt_6",
+            "name": "Send MQTT Message",
+            "description": "Pubishes message on MQTT topic",
+            "activity": {
+              "ref": "github.com/jvanderl/flogo-components/incubator/activity/mqtt",
+              "input": {
+                "broker": "",
+                "id": "",
+                "user": "",
+                "password": "",
+                "topic": "",
+                "qos": 0,
+                "message": null
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "assign",
+                    "value": "$env[MQTT_SERVER]",
+                    "mapTo": "broker"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "FSW_SEND_999",
+                    "mapTo": "id"
+                  },
+                  {
+                    "type": "assign",
+                    "value": "$env[MQTT_PWD]",
+                    "mapTo": "password"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "mum/fuelalert/999",
+                    "mapTo": "topic"
+                  },
+                  {
+                    "type": "assign",
+                    "value": "$env[MQTT_USER]",
+                    "mapTo": "user"
+                  },
+                  {
+                    "type": "object",
+                    "value": {
+                      "mumreport": {
+                        "participantId": "999",
+                        "truckId": "{{$activity[jsontodata_2].data.mumreport.truckId}}",
+                        "dateTime": "{{$activity[jsontodata_2].data.mumreport.dateTime}}",
+                        "fuelLevel": "{{$activity[jsontodata_2].data.mumreport.fuelLevel}}",
+                        "position": {
+                          "lat": "{{$activity[jsontodata_2].data.mumreport.position.lat}}",
+                          "long": "{{$activity[jsontodata_2].data.mumreport.position.long}}",
+                          "speed": "{{$activity[jsontodata_2].data.mumreport.position.speed}}"
+                        },
+                        "fuellocation": {
+                          "name": "{{$activity[jsontodata_5].data.DisplayName}}",
+                          "lat": "{{$activity[jsontodata_5].data.Latitude}}",
+                          "long": "{{$activity[jsontodata_5].data.Longitude}}",
+                          "phone": "{{$activity[jsontodata_5].data.Phone}}"
+                        }
+                      }
+                    },
+                    "mapTo": "message"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "links": [
+          {
+            "from": "jsontodata_2",
+            "to": "rest_3",
+            "type": "expression",
+            "value": "$activity[jsontodata_2].data.mumreport.fuelLevel <= 25.0"
+          },
+          {
+            "from": "rest_3",
+            "to": "log_4",
+            "type": "expression",
+            "value": "$activity[rest_3].status != 200"
+          },
+          {
+            "from": "rest_3",
+            "to": "jsontodata_5",
+            "type": "expression",
+            "value": "$activity[rest_3].status == 200"
+          },
+          {
+            "from": "jsontodata_5",
+            "to": "mqtt_6"
+          }
+        ]
+      }
+    },
+    {
+      "id": "flow:rest_stop",
+      "data": {
+        "name": "RestStop",
+        "metadata": {
+          "input": [
+            {
+              "name": "message",
+              "type": "string"
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "id": "jsontodata_2",
+            "name": "JSON to Data",
+            "description": "Converts JSON string into a data object",
+            "activity": {
+              "ref": "github.com/jvanderl/flogo-components/activity/jsontodata",
+              "input": {
+                "input": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "assign",
+                    "value": "$flow.message",
+                    "mapTo": "input"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "lambda_3",
+            "name": "Invoke AWS Lambda Function",
+            "description": "Invoke AWS Lambda Function via ARN Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/lambda",
+              "input": {
+                "arn": "",
+                "region": "",
+                "accessKey": "",
+                "secretKey": "",
+                "payload": null
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "literal",
+                    "value": "arn:aws:lambda:eu-west-1:759196414409:function:TN18_AttentionEvaluation",
+                    "mapTo": "arn"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "eu-west-1",
+                    "mapTo": "region"
+                  },
+                  {
+                    "type": "object",
+                    "value": {
+                      "participantId": "999",
+                      "truckId": "{{$activity[jsontodata_2].data.mumreport.truckId}}",
+                      "journeyTime": "{{$activity[jsontodata_2].data.mumreport.journeyTime}}",
+                      "attentionLevel": "{{$activity[jsontodata_2].data.mumreport.attentionLevel}}",
+                      "odometer": "{{$activity[jsontodata_2].data.mumreport.odometer}}"
+                    },
+                    "mapTo": "payload"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "jsontodata_4",
+            "name": "JSON to Data (2)",
+            "description": "Converts JSON string into a data object",
+            "activity": {
+              "ref": "github.com/jvanderl/flogo-components/activity/jsontodata",
+              "input": {
+                "input": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "assign",
+                    "value": "$activity[lambda_3].result",
+                    "mapTo": "input"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "rest_5",
+            "name": "Invoke REST Service",
+            "description": "Simple REST Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/rest",
+              "input": {
+                "method": "",
+                "uri": "",
+                "proxy": "",
+                "pathParams": null,
+                "queryParams": null,
+                "header": null,
+                "skipSsl": "false",
+                "content": null
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "literal",
+                    "value": "GET",
+                    "mapTo": "method"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "http://ahampshi.api.mashery.com/tn18/locate",
+                    "mapTo": "uri"
+                  },
+                  {
+                    "type": "object",
+                    "value": {
+                      "lat": "{{$activity[jsontodata_2].data.mumreport.position.lat}}",
+                      "long": "{{$activity[jsontodata_2].data.mumreport.position.long}}",
+                      "api_key": "2q2src2scxwh7q5hduskufdv",
+                      "service": "9996"
+                    },
+                    "mapTo": "queryParams"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "log_6",
+            "name": "Log Message",
+            "description": "Simple Log Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+              "input": {
+                "message": "",
+                "flowInfo": "false",
+                "addToFlow": "false"
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "expression",
+                    "value": "string.concat(\"Error calling service \", $activity[rest_5].result)",
+                    "mapTo": "addToFlow"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "jsontodata_7",
+            "name": "JSON to Data (3)",
+            "description": "Converts JSON string into a data object",
+            "activity": {
+              "ref": "github.com/jvanderl/flogo-components/activity/jsontodata",
+              "input": {
+                "input": ""
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "assign",
+                    "value": "$activity[rest_5].result",
+                    "mapTo": "input"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "mqtt_8",
+            "name": "Send MQTT Message",
+            "description": "Pubishes message on MQTT topic",
+            "activity": {
+              "ref": "github.com/jvanderl/flogo-components/incubator/activity/mqtt",
+              "input": {
+                "broker": null,
+                "id": "",
+                "user": "",
+                "password": "",
+                "topic": "",
+                "qos": 0,
+                "message": null
+              },
+              "mappings": {
+                "input": [
+                  {
+                    "type": "assign",
+                    "value": "$env[MQTT_SERVER]",
+                    "mapTo": "broker"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "RW_SEND_999",
+                    "mapTo": "id"
+                  },
+                  {
+                    "type": "assign",
+                    "value": "$env[MQTT_USER]",
+                    "mapTo": "user"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "mum/attentionalert/999",
+                    "mapTo": "topic"
+                  },
+                  {
+                    "type": "assign",
+                    "value": "$env[MQTT_PWD]",
+                    "mapTo": "password"
+                  },
+                  {
+                    "type": "object",
+                    "value": {
+                      "mumreport": {
+                        "participantId": "999",
+                        "truckId": "{{$activity[jsontodata_2].data.mumreport.truckId}}",
+                        "journeyTime": "{{$activity[jsontodata_2].data.mumreport.journeyTime}}",
+                        "dateTime": "{{$activity[jsontodata_2].data.mumreport.dateTime}}",
+                        "fuelLevel": "{{$activity[jsontodata_2].data.mumreport.fuelLevel}}",
+                        "attentionLevel": "{{$activity[jsontodata_2].data.mumreport.attentionLevel}}",
+                        "position": {
+                          "lat": "{{$activity[jsontodata_2].data.mumreport.position.lat}}",
+                          "long": "{{$activity[jsontodata_2].data.mumreport.position.long}}",
+                          "speed": "{{$activity[jsontodata_2].data.mumreport.position.speed}}"
+                        },
+                        "restlocation": {
+                          "name": "{{$activity[jsontodata_7].data.DisplayName}}",
+                          "lat": "{{$activity[jsontodata_7].data.Latitude}}",
+                          "long": "{{$activity[jsontodata_7].data.Longitude}}",
+                          "phone": "{{$activity[jsontodata_7].data.Phone}}"
+                        }
+                      }
+                    },
+                    "mapTo": "message"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "links": [
+          {
+            "from": "jsontodata_2",
+            "to": "lambda_3"
+          },
+          {
+            "from": "lambda_3",
+            "to": "jsontodata_4"
+          },
+          {
+            "from": "jsontodata_4",
+            "to": "rest_5",
+            "type": "expression",
+            "value": "$activity[jsontodata_4].data.needStop == true"
+          },
+          {
+            "from": "rest_5",
+            "to": "log_6",
+            "type": "expression",
+            "value": "$activity[rest_5].status!= 200"
+          },
+          {
+            "from": "rest_5",
+            "to": "jsontodata_7",
+            "type": "expression",
+            "value": "$activity[rest_5].status == 200"
+          },
+          {
+            "from": "jsontodata_7",
+            "to": "mqtt_8"
+          }
+        ]
+      }
+    }
+  ]
+}
