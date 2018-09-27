@@ -1,0 +1,21 @@
+{
+ "mumreport": {
+   "participantId": "nnn",
+   "truckId": "{{$activity[jsontodata_2].data.mumreport.truckId}}",
+   "journeyTime": "{{$activity[jsontodata_2].data.mumreport.journeyTime}}",
+   "dateTime": "{{$activity[jsontodata_2].data.mumreport.dateTime}}",
+   "fuelLevel": "{{$activity[jsontodata_2].data.mumreport.fuelLevel}}",
+   "attentionLevel": "{{$activity[jsontodata_2].data.mumreport.attentionLevel}}",
+   "position": {
+     "lat": "{{$activity[jsontodata_2].data.mumreport.position.lat}}",
+     "long": "{{$activity[jsontodata_2].data.mumreport.position.long}}",
+     "speed": "{{$activity[jsontodata_2].data.mumreport.position.speed}}"
+   },
+   "restlocation": {
+     "name": "{{$activity[jsontodata_7].data.DisplayName}}",
+     "lat": "{{$activity[jsontodata_7].data.Latitude}}",
+     "long": "{{$activity[jsontodata_7].data.Longitude}}",
+     "phone": "{{$activity[jsontodata_7].data.Phone}}"
+   }
+ }
+}

@@ -1,0 +1,7 @@
+{
+ "participantId": "nnn",
+ "truckId": "{{$activity[jsontodata_2].data.mumreport.truckId}}",
+ "journeyTime": "{{$activity[jsontodata_2].data.mumreport.journeyTime}}",
+ "attentionLevel": "{{$activity[jsontodata_2].data.mumreport.attentionLevel}}",
+ "odometer": "{{$activity[jsontodata_2].data.mumreport.odometer}}"
+}

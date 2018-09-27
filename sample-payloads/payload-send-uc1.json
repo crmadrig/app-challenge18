@@ -1,0 +1,13 @@
+{
+ "mumreport": {
+   "participantId": "nnn",
+   "truckId": "{{$activity[jsontodata_3].data.mumreport.truckId}}",
+   "dateTime": "{{$activity[jsontodata_3].data.mumreport.dateTime}}",
+   "fuelLevel": "{{$activity[jsontodata_3].data.mumreport.fuelLevel}}",
+   "position": {
+     "lat": "{{$activity[jsontodata_3].data.mumreport.position.lat}}",
+     "long": "{{$activity[jsontodata_3].data.mumreport.position.long}}",
+     "speed": "{{$activity[aggregate_4].result}}"
+   }
+ }
+}
